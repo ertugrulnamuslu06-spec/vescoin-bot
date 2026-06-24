@@ -7,8 +7,9 @@ const {
 } = require("discord.js");
 
 const fs = require("fs");
+const path = require("path");
 
-// 👑 ADMINS (2 ADMIN)
+// 👑 ADMINS
 const ADMINS = [
     "1254449388407754964",
     "405339262813470723"
@@ -22,20 +23,29 @@ const client = new Client({
     ]
 });
 
-// 📦 DATABASE
+// 📦 DB PATH (Render safe)
+const dbPath = path.join(__dirname, "coins.json");
+
+// 📦 DATABASE LOAD
 let db = {};
 
-if (fs.existsSync("./coins.json")) {
+function loadDB() {
     try {
-        db = JSON.parse(fs.readFileSync("./coins.json"));
+        if (fs.existsSync(dbPath)) {
+            db = JSON.parse(fs.readFileSync(dbPath, "utf8"));
+        } else {
+            db = {};
+        }
     } catch {
         db = {};
     }
 }
 
 function saveDB() {
-    fs.writeFileSync("./coins.json", JSON.stringify(db, null, 2));
+    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
 }
+
+loadDB();
 
 // 🧠 USER SYSTEM
 function getUser(id) {
@@ -79,21 +89,18 @@ client.on("ready", () => {
 });
 
 // 💬 COMMANDS
-client.on("messageCreate", async (message) => {
+client.on("messageCreate", (message) => {
     if (message.author.bot) return;
 
     const args = message.content.split(" ");
-
     let u = getUser(message.author.id);
 
     // 💰 BAKİYE
     if (message.content === ".bakiye") {
-        return message.reply(
-            `💰 ${u.coins} Vescoin | ⭐ Level ${u.level} | XP ${u.xp}`
-        );
+        return message.reply(`💰 ${u.coins} Vescoin | ⭐ Level ${u.level} | XP ${u.xp}`);
     }
 
-    // 💸 PARA GÖNDER (LEVEL 5)
+    // 💸 GÖNDER
     if (args[0] === ".gönder") {
         const target = message.mentions.users.first();
         const amount = parseInt(args[2]);
@@ -107,7 +114,7 @@ client.on("messageCreate", async (message) => {
         }
 
         if (u.level < 5) {
-            return message.reply("❌ Level 5 olmadan coin gönderemezsin!");
+            return message.reply("❌ Level 5 olmadan gönderemezsin!");
         }
 
         let receiver = getUser(target.id);
@@ -124,10 +131,10 @@ client.on("messageCreate", async (message) => {
         return message.reply(`💸 ${amount} Vescoin gönderildi!`);
     }
 
-    // 👑 ADMIN COIN VER
+    // 👑 ADMIN COIN
     if (args[0] === ".coinver") {
         if (!ADMINS.includes(message.author.id)) {
-            return message.reply("❌ Sadece admin!");
+            return message.reply("❌ Admin değilsin!");
         }
 
         const target = message.mentions.users.first();
@@ -142,19 +149,15 @@ client.on("messageCreate", async (message) => {
 
         saveDB();
 
-        return message.reply(`👑 ${amount} Vescoin verildi!`);
+        return message.reply(`👑 ${amount} coin verildi!`);
     }
 
     // 💣 MAYIN TARLASI
     if (args[0] === ".mayin") {
         const bet = parseInt(args[1]);
 
-        if (!bet) {
-            return message.reply("Kullanım: .mayin 50");
-        }
-
-        if (u.coins < bet) {
-            return message.reply("❌ Yetersiz Vescoin!");
+        if (!bet || u.coins < bet) {
+            return message.reply("❌ Yetersiz coin!");
         }
 
         let mines = [];
@@ -190,25 +193,21 @@ client.on("messageCreate", async (message) => {
         }
 
         message.reply({
-            content: "💣 Mayın Tarlası başladı! 3 kare seç!",
+            content: "💣 Mayın Tarlası başladı!",
             components: rows
         });
     }
 });
 
-// 🧠 BUTTON SYSTEM
-client.on("interactionCreate", async (interaction) => {
+// 🧠 BUTTONS
+client.on("interactionCreate", (interaction) => {
     if (!interaction.isButton()) return;
-
     if (!interaction.customId.startsWith("mine_")) return;
 
     const index = parseInt(interaction.customId.split("_")[1]);
 
     let game = games[interaction.user.id];
-
-    if (!game) {
-        return interaction.reply({ content: "❌ Oyun yok!", ephemeral: true });
-    }
+    if (!game) return interaction.reply({ content: "❌ Oyun yok!", ephemeral: true });
 
     if (game.picks.includes(index)) {
         return interaction.reply({ content: "⚠️ Zaten seçtin!", ephemeral: true });
@@ -218,36 +217,26 @@ client.on("interactionCreate", async (interaction) => {
 
     let u = getUser(interaction.user.id);
 
-    // 💣 MAYIN
+    // 💣 MINE
     if (game.mines.includes(index)) {
         u.coins -= game.bet;
-
         addXP(interaction.user.id, 10);
 
         delete games[interaction.user.id];
-
         saveDB();
 
-        return interaction.reply({
-            content: "💣 Mayına bastın! Kaybettin ❌",
-            ephemeral: true
-        });
+        return interaction.reply({ content: "💣 Kaybettin!", ephemeral: true });
     }
 
-    // 🟩 KAZANMA
+    // 🏆 WIN
     if (game.picks.length === 3) {
         u.coins += game.bet * 2;
-
         addXP(interaction.user.id, 25);
 
         delete games[interaction.user.id];
-
         saveDB();
 
-        return interaction.reply({
-            content: "🎉 Kazandın! 2x Vescoin 💰",
-            ephemeral: true
-        });
+        return interaction.reply({ content: "🎉 Kazandın! 2x coin!", ephemeral: true });
     }
 
     return interaction.reply({
@@ -256,5 +245,5 @@ client.on("interactionCreate", async (interaction) => {
     });
 });
 
-// 🔑 BOT LOGIN
+// 🔑 LOGIN
 client.login(process.env.TOKEN);
