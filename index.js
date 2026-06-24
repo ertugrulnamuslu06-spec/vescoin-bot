@@ -33,10 +33,12 @@ try {
     db = {};
 }
 
+// 💾 SAVE
 function saveDB() {
     fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
 }
 
+// 👤 USER
 function getUser(id) {
     if (!db[id]) {
         db[id] = {
@@ -67,7 +69,7 @@ client.on("ready", () => {
     console.log("✅ Vescoin Bot Aktif!");
 });
 
-// 💬 MESSAGE SYSTEM
+// 💬 COMMANDS
 client.on("messageCreate", (message) => {
     if (message.author.bot) return;
 
@@ -111,7 +113,7 @@ client.on("messageCreate", (message) => {
         return message.reply(`💸 ${amount} coin gönderildi`);
     }
 
-    // ✂️ TKM (FINAL FIX)
+    // ✂️ TKM (TEK + DÜZELTİLMİŞ + TEK MESAJ)
     if (message.content.startsWith(".tkm")) {
 
         const args2 = message.content.trim().split(/\s+/);
@@ -135,26 +137,31 @@ client.on("messageCreate", (message) => {
 
         const bot = options[Math.floor(Math.random() * 3)];
 
-        let win =
-            (choice === "taş" && bot === "makas") ||
-            (choice === "kağıt" && bot === "taş") ||
-            (choice === "makas" && bot === "kağıt");
-
         let resultText = "";
 
         if (choice === bot) {
             resultText = `🤝 Berabere! Ben ${bot} seçtim`;
-        } else if (win) {
-            u.coins += bet;
-            addXP(message.author.id, 10);
-            resultText = `🎉 Kazandın! Ben ${bot} seçtim +${bet} coin`;
         } else {
-            u.coins -= bet;
-            resultText = `💥 Kaybettin! Ben ${bot} seçtim -${bet} coin`;
+            const win =
+                (choice === "taş" && bot === "makas") ||
+                (choice === "kağıt" && bot === "taş") ||
+                (choice === "makas" && bot === "kağıt");
+
+            if (win) {
+                u.coins += bet;
+                addXP(message.author.id, 10);
+                resultText = `🎉 Kazandın! Ben ${bot} seçtim +${bet} coin`;
+            } else {
+                u.coins -= bet;
+                resultText = `💥 Kaybettin! Ben ${bot} seçtim -${bet} coin`;
+            }
         }
 
         saveDB();
-        return message.reply(resultText);
+
+        return message.reply(
+            `${resultText}\n💰 Güncel Bakiye: ${u.coins} coin | ⭐ Level ${u.level}`
+        );
     }
 });
 
