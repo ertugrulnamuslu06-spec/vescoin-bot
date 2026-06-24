@@ -23,28 +23,29 @@ const client = new Client({
     ]
 });
 
-// 📦 DB
+// 📦 DB PATH
 const dbPath = path.join(__dirname, "coins.json");
 
+// 🧠 SAFE LOAD (FIX)
 let db = {};
 
-function loadDB() {
-    try {
-        db = fs.existsSync(dbPath)
-            ? JSON.parse(fs.readFileSync(dbPath, "utf8"))
-            : {};
-    } catch {
+try {
+    if (fs.existsSync(dbPath)) {
+        db = JSON.parse(fs.readFileSync(dbPath, "utf8") || "{}");
+    } else {
         db = {};
     }
+} catch (err) {
+    console.log("DB yüklenemedi, sıfırdan başlatılıyor");
+    db = {};
 }
 
+// 💾 SAVE
 function saveDB() {
     fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
 }
 
-loadDB();
-
-// 🧠 USER
+// 👤 USER SYSTEM
 function getUser(id) {
     if (!db[id]) {
         db[id] = {
@@ -56,7 +57,7 @@ function getUser(id) {
     return db[id];
 }
 
-// 📈 LEVEL
+// 📈 LEVEL SYSTEM
 function addXP(id, amount) {
     let u = getUser(id);
 
@@ -70,14 +71,15 @@ function addXP(id, amount) {
     saveDB();
 }
 
+// 🎮 ACTIVE GAMES
 let games = {};
 
 // 🤖 READY
 client.on("ready", () => {
-    console.log("Vescoin Bot Aktif!");
+    console.log("✅ Vescoin Bot Aktif!");
 });
 
-// 💬 MESSAGE
+// 💬 MESSAGE SYSTEM
 client.on("messageCreate", (message) => {
     if (message.author.bot) return;
 
@@ -86,7 +88,7 @@ client.on("messageCreate", (message) => {
 
     // 💰 BAKİYE
     if (message.content === ".bakiye") {
-        return message.reply(`💰 ${u.coins} coin | ⭐ Level ${u.level} | XP ${u.xp}`);
+        return message.reply(`💰 ${u.coins} Vescoin | ⭐ Level ${u.level} | XP ${u.xp}`);
     }
 
     // 👑 COINVER
@@ -99,38 +101,38 @@ client.on("messageCreate", (message) => {
         if (!target || !amount) return;
 
         getUser(target.id).coins += amount;
-        saveDB();
 
+        saveDB();
         return message.reply("👑 coin verildi");
     }
 
-    // 📤 GÖNDER
+    // 📤 GÖNDER (LEVEL 5)
     if (args[0] === ".gönder") {
         const target = message.mentions.users.first();
         const amount = Number(args[2]);
 
         if (!target || !amount) return;
 
-        if (u.level < 5) return message.reply("level 5 lazım");
-
-        if (u.coins < amount) return message.reply("yetersiz coin");
+        if (u.level < 5) return message.reply("❌ level 5 lazım");
+        if (u.coins < amount) return message.reply("❌ yetersiz coin");
 
         u.coins -= amount;
         getUser(target.id).coins += amount;
 
         saveDB();
-        return message.reply("gönderildi");
+        return message.reply("💸 gönderildi");
     }
 
-    // ✂️ TKM (TEK SİSTEM - ESKİ SİLİNDİ)
-    if (args[0] === ".tkm") {
+    // ✂️ TKM (BAHİSLİ - FIXLİ)
+    if (message.content.startsWith(".tkm")) {
 
-        const bet = Number(args[1]);
-        const choice = (args[2] || "").toLowerCase();
+        const args2 = message.content.trim().split(/\s+/);
+
+        const bet = Number(args2[1]);
+        const choice = (args2[2] || "").toLowerCase();
 
         const options = ["taş", "kağıt", "makas"];
 
-        // ❗ TEK KULLANIM ŞEKLİ
         if (!bet || !choice) {
             return message.reply("❌ Kullanım: .tkm 50 taş");
         }
