@@ -1,9 +1,6 @@
 const {
     Client,
-    GatewayIntentBits,
-    ActionRowBuilder,
-    ButtonBuilder,
-    ButtonStyle
+    GatewayIntentBits
 } = require("discord.js");
 
 const fs = require("fs");
@@ -23,29 +20,23 @@ const client = new Client({
     ]
 });
 
-// 📦 DB PATH
+// 📦 DB
 const dbPath = path.join(__dirname, "coins.json");
 
-// 🧠 SAFE LOAD (FIX)
 let db = {};
 
 try {
     if (fs.existsSync(dbPath)) {
         db = JSON.parse(fs.readFileSync(dbPath, "utf8") || "{}");
-    } else {
-        db = {};
     }
-} catch (err) {
-    console.log("DB yüklenemedi, sıfırdan başlatılıyor");
+} catch {
     db = {};
 }
 
-// 💾 SAVE
 function saveDB() {
     fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
 }
 
-// 👤 USER SYSTEM
 function getUser(id) {
     if (!db[id]) {
         db[id] = {
@@ -71,9 +62,6 @@ function addXP(id, amount) {
     saveDB();
 }
 
-// 🎮 ACTIVE GAMES
-let games = {};
-
 // 🤖 READY
 client.on("ready", () => {
     console.log("✅ Vescoin Bot Aktif!");
@@ -91,7 +79,7 @@ client.on("messageCreate", (message) => {
         return message.reply(`💰 ${u.coins} Vescoin | ⭐ Level ${u.level} | XP ${u.xp}`);
     }
 
-    // 👑 COINVER
+    // 👑 COINVER (ADMIN)
     if (args[0] === ".coinver") {
         if (!ADMINS.includes(message.author.id)) return;
 
@@ -101,9 +89,9 @@ client.on("messageCreate", (message) => {
         if (!target || !amount) return;
 
         getUser(target.id).coins += amount;
-
         saveDB();
-        return message.reply("👑 coin verildi");
+
+        return message.reply(`👑 ${amount} coin verildi`);
     }
 
     // 📤 GÖNDER (LEVEL 5)
@@ -120,10 +108,10 @@ client.on("messageCreate", (message) => {
         getUser(target.id).coins += amount;
 
         saveDB();
-        return message.reply("💸 gönderildi");
+        return message.reply(`💸 ${amount} coin gönderildi`);
     }
 
-    // ✂️ TKM (BAHİSLİ - FIXLİ)
+    // ✂️ TKM (FINAL FIX)
     if (message.content.startsWith(".tkm")) {
 
         const args2 = message.content.trim().split(/\s+/);
@@ -147,25 +135,26 @@ client.on("messageCreate", (message) => {
 
         const bot = options[Math.floor(Math.random() * 3)];
 
-        if (choice === bot) {
-            return message.reply(`🤝 Berabere! Ben ${bot}`);
-        }
-
-        const win =
+        let win =
             (choice === "taş" && bot === "makas") ||
             (choice === "kağıt" && bot === "taş") ||
             (choice === "makas" && bot === "kağıt");
 
-        if (win) {
+        let resultText = "";
+
+        if (choice === bot) {
+            resultText = `🤝 Berabere! Ben ${bot} seçtim`;
+        } else if (win) {
             u.coins += bet;
             addXP(message.author.id, 10);
+            resultText = `🎉 Kazandın! Ben ${bot} seçtim +${bet} coin`;
         } else {
             u.coins -= bet;
+            resultText = `💥 Kaybettin! Ben ${bot} seçtim -${bet} coin`;
         }
 
         saveDB();
-
-        return message.reply(`🎮 Ben ${bot} seçtim`);
+        return message.reply(resultText);
     }
 });
 
