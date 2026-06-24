@@ -9,6 +9,7 @@ const {
 const fs = require("fs");
 const path = require("path");
 
+// 👑 ADMINS
 const ADMINS = [
     "1254449388407754964",
     "405339262813470723"
@@ -22,6 +23,7 @@ const client = new Client({
     ]
 });
 
+// 📦 DB
 const dbPath = path.join(__dirname, "coins.json");
 
 let db = {};
@@ -42,13 +44,19 @@ function saveDB() {
 
 loadDB();
 
+// 🧠 USER
 function getUser(id) {
     if (!db[id]) {
-        db[id] = { coins: 1000, xp: 0, level: 1 };
+        db[id] = {
+            coins: 1000,
+            xp: 0,
+            level: 1
+        };
     }
     return db[id];
 }
 
+// 📈 LEVEL
 function addXP(id, amount) {
     let u = getUser(id);
 
@@ -64,10 +72,12 @@ function addXP(id, amount) {
 
 let games = {};
 
+// 🤖 READY
 client.on("ready", () => {
     console.log("Vescoin Bot Aktif!");
 });
 
+// 💬 MESSAGE
 client.on("messageCreate", (message) => {
     if (message.author.bot) return;
 
@@ -91,7 +101,7 @@ client.on("messageCreate", (message) => {
         getUser(target.id).coins += amount;
         saveDB();
 
-        return message.reply("coin verildi");
+        return message.reply("👑 coin verildi");
     }
 
     // 📤 GÖNDER
@@ -102,6 +112,7 @@ client.on("messageCreate", (message) => {
         if (!target || !amount) return;
 
         if (u.level < 5) return message.reply("level 5 lazım");
+
         if (u.coins < amount) return message.reply("yetersiz coin");
 
         u.coins -= amount;
@@ -111,7 +122,7 @@ client.on("messageCreate", (message) => {
         return message.reply("gönderildi");
     }
 
-    // ✂️ TKM (TEK VE TEMİZ SİSTEM)
+    // ✂️ TKM (TEK SİSTEM - ESKİ SİLİNDİ)
     if (args[0] === ".tkm") {
 
         const bet = Number(args[1]);
@@ -119,13 +130,13 @@ client.on("messageCreate", (message) => {
 
         const options = ["taş", "kağıt", "makas"];
 
-        // 🔥 FIX: yanlış kullanım engeli
+        // ❗ TEK KULLANIM ŞEKLİ
         if (!bet || !choice) {
-            return message.reply("❌ Kullanım: .tkm 50 taş / kağıt / makas");
+            return message.reply("❌ Kullanım: .tkm 50 taş");
         }
 
         if (!options.includes(choice)) {
-            return message.reply("❌ taş / kağıt / makas yaz");
+            return message.reply("❌ taş / kağıt / makas");
         }
 
         if (u.coins < bet) {
@@ -156,4 +167,5 @@ client.on("messageCreate", (message) => {
     }
 });
 
+// 🔑 LOGIN
 client.login(process.env.TOKEN);
