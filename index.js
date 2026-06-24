@@ -33,12 +33,10 @@ try {
     db = {};
 }
 
-// 💾 SAVE
 function saveDB() {
     fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
 }
 
-// 👤 USER
 function getUser(id) {
     if (!db[id]) {
         db[id] = {
@@ -50,7 +48,6 @@ function getUser(id) {
     return db[id];
 }
 
-// 📈 LEVEL SYSTEM
 function addXP(id, amount) {
     let u = getUser(id);
 
@@ -69,7 +66,9 @@ client.on("ready", () => {
     console.log("✅ Vescoin Bot Aktif!");
 });
 
-// 💬 COMMANDS
+// 🚨 TEK MESSAGE HANDLER (DUPLICATE YOK)
+client.removeAllListeners("messageCreate");
+
 client.on("messageCreate", (message) => {
     if (message.author.bot) return;
 
@@ -81,7 +80,7 @@ client.on("messageCreate", (message) => {
         return message.reply(`💰 ${u.coins} Vescoin | ⭐ Level ${u.level} | XP ${u.xp}`);
     }
 
-    // 👑 COINVER (ADMIN)
+    // 👑 COINVER
     if (args[0] === ".coinver") {
         if (!ADMINS.includes(message.author.id)) return;
 
@@ -96,7 +95,7 @@ client.on("messageCreate", (message) => {
         return message.reply(`👑 ${amount} coin verildi`);
     }
 
-    // 📤 GÖNDER (LEVEL 5)
+    // 📤 GÖNDER
     if (args[0] === ".gönder") {
         const target = message.mentions.users.first();
         const amount = Number(args[2]);
@@ -113,13 +112,11 @@ client.on("messageCreate", (message) => {
         return message.reply(`💸 ${amount} coin gönderildi`);
     }
 
-    // ✂️ TKM (TEK + DÜZELTİLMİŞ + TEK MESAJ)
+    // ✂️ TKM (TEK MESAJ + FIX)
     if (message.content.startsWith(".tkm")) {
 
-        const args2 = message.content.trim().split(/\s+/);
-
-        const bet = Number(args2[1]);
-        const choice = (args2[2] || "").toLowerCase();
+        const bet = Number(args[1]);
+        const choice = (args[2] || "").toLowerCase();
 
         const options = ["taş", "kağıt", "makas"];
 
@@ -137,10 +134,10 @@ client.on("messageCreate", (message) => {
 
         const bot = options[Math.floor(Math.random() * 3)];
 
-        let resultText = "";
+        let result = "";
 
         if (choice === bot) {
-            resultText = `🤝 Berabere! Ben ${bot} seçtim`;
+            result = `🤝 Berabere! Ben ${bot}`;
         } else {
             const win =
                 (choice === "taş" && bot === "makas") ||
@@ -150,17 +147,17 @@ client.on("messageCreate", (message) => {
             if (win) {
                 u.coins += bet;
                 addXP(message.author.id, 10);
-                resultText = `🎉 Kazandın! Ben ${bot} seçtim +${bet} coin`;
+                result = `🎉 Kazandın! Ben ${bot} +${bet}`;
             } else {
                 u.coins -= bet;
-                resultText = `💥 Kaybettin! Ben ${bot} seçtim -${bet} coin`;
+                result = `💥 Kaybettin! Ben ${bot} -${bet}`;
             }
         }
 
         saveDB();
 
         return message.reply(
-            `${resultText}\n💰 Güncel Bakiye: ${u.coins} coin | ⭐ Level ${u.level}`
+            `${result}\n💰 Güncel: ${u.coins} coin | ⭐ Level ${u.level}`
         );
     }
 });
