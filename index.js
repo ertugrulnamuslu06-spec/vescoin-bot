@@ -23,9 +23,10 @@ const client = new Client({
     ]
 });
 
-// 📦 DB
+// 📦 DB PATH
 const dbPath = path.join(__dirname, "coins.json");
 
+// 📦 LOAD DB SAFE
 let db = {};
 
 function loadDB() {
@@ -46,7 +47,7 @@ function saveDB() {
 
 loadDB();
 
-// 🧠 USER
+// 🧠 USER SYSTEM
 function getUser(id) {
     if (!db[id]) {
         db[id] = {
@@ -87,7 +88,7 @@ client.on("ready", () => {
     console.log("✅ Vescoin Bot Aktif!");
 });
 
-// 💬 COMMANDS
+// 💬 MESSAGE SYSTEM
 client.on("messageCreate", (message) => {
     if (message.author.bot) return;
 
@@ -130,7 +131,7 @@ client.on("messageCreate", (message) => {
         return message.reply(`💸 ${amount} Vescoin gönderildi!`);
     }
 
-    // 👑 COINVER (ADMIN)
+    // 👑 ADMIN COIN
     if (args[0] === ".coinver") {
         if (!ADMINS.includes(message.author.id)) {
             return message.reply("❌ Admin değilsin!");
@@ -151,40 +152,49 @@ client.on("messageCreate", (message) => {
         return message.reply(`👑 ${amount} coin verildi!`);
     }
 
-    // ✂️ TAŞ KAĞIT MAKAS
+    // ✂️ BAHİSLİ TAŞ KAĞIT MAKAS
     if (args[0] === ".tkm") {
-        const choice = args[1]?.toLowerCase().trim();
+        const bet = parseInt(args[1]);
+        const choice = (args[2] || "").toLowerCase().trim();
 
         const options = ["taş", "kağıt", "makas"];
 
-        if (!options.includes(choice)) {
-            return message.reply("❌ Kullanım: .tkm taş / kağıt / makas");
+        if (!bet || !choice) {
+            return message.reply("Kullanım: .tkm 50 taş / kağıt / makas");
         }
 
-        const bot = options[Math.floor(Math.random() * options.length)];
+        if (!options.includes(choice)) {
+            return message.reply("❌ taş / kağıt / makas yazmalısın");
+        }
 
         let u = getUser(message.author.id);
 
-        if (choice === bot) {
-            return message.reply(`🤝 Berabere! Ben ${bot} seçtim.`);
+        if (u.coins < bet) {
+            return message.reply("❌ Yetersiz coin!");
         }
 
-        let win =
+        const bot = options[Math.floor(Math.random() * 3)];
+
+        if (choice === bot) {
+            return message.reply(`🤝 Berabere! Ben ${bot} seçtim. Coin gitmedi.`);
+        }
+
+        const win =
             (choice === "taş" && bot === "makas") ||
             (choice === "kağıt" && bot === "taş") ||
             (choice === "makas" && bot === "kağıt");
 
         if (win) {
-            u.coins += 100;
+            u.coins += bet;
             addXP(message.author.id, 10);
             saveDB();
 
-            return message.reply(`🎉 Kazandın! Ben ${bot} seçtim +100 coin`);
+            return message.reply(`🎉 Kazandın! Ben ${bot} seçtim +${bet} coin`);
         } else {
-            u.coins -= 50;
+            u.coins -= bet;
             saveDB();
 
-            return message.reply(`💥 Kaybettin! Ben ${bot} seçtim -50 coin`);
+            return message.reply(`💥 Kaybettin! Ben ${bot} seçtim -${bet} coin`);
         }
     }
 
@@ -253,7 +263,6 @@ client.on("interactionCreate", (interaction) => {
 
     let u = getUser(interaction.user.id);
 
-    // 💣 LOSE
     if (game.mines.includes(index)) {
         u.coins -= game.bet;
         addXP(interaction.user.id, 10);
@@ -264,7 +273,6 @@ client.on("interactionCreate", (interaction) => {
         return interaction.reply({ content: "💣 Kaybettin!", ephemeral: true });
     }
 
-    // 🏆 WIN
     if (game.picks.length === 3) {
         u.coins += game.bet * 2;
         addXP(interaction.user.id, 25);
