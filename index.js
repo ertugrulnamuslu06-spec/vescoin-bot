@@ -23,10 +23,9 @@ const client = new Client({
     ]
 });
 
-// 📦 DB PATH
+// 📦 DB
 const dbPath = path.join(__dirname, "coins.json");
 
-// 📦 LOAD DB (SAFE)
 let db = {};
 
 function loadDB() {
@@ -88,7 +87,7 @@ client.on("ready", () => {
     console.log("✅ Vescoin Bot Aktif!");
 });
 
-// 💬 MESSAGE SYSTEM
+// 💬 COMMANDS
 client.on("messageCreate", (message) => {
     if (message.author.bot) return;
 
@@ -100,7 +99,7 @@ client.on("messageCreate", (message) => {
         return message.reply(`💰 ${u.coins} Vescoin | ⭐ Level ${u.level} | XP ${u.xp}`);
     }
 
-    // 📤 GÖNDER (LEVEL 5)
+    // 📤 GÖNDER
     if (args[0] === ".gönder") {
         const target = message.mentions.users.first();
         const amount = parseInt(args[2]);
@@ -131,7 +130,7 @@ client.on("messageCreate", (message) => {
         return message.reply(`💸 ${amount} Vescoin gönderildi!`);
     }
 
-    // 👑 ADMIN COIN
+    // 👑 COINVER (ADMIN)
     if (args[0] === ".coinver") {
         if (!ADMINS.includes(message.author.id)) {
             return message.reply("❌ Admin değilsin!");
@@ -152,16 +151,19 @@ client.on("messageCreate", (message) => {
         return message.reply(`👑 ${amount} coin verildi!`);
     }
 
-    // ✂️ TAŞ KAĞIT MAKAS (.tkm)
+    // ✂️ TAŞ KAĞIT MAKAS
     if (args[0] === ".tkm") {
-        const choice = args[1];
-
-        if (!choice) {
-            return message.reply("Kullanım: .tkm taş / kağıt / makas");
-        }
+        const choice = args[1]?.toLowerCase().trim();
 
         const options = ["taş", "kağıt", "makas"];
+
+        if (!options.includes(choice)) {
+            return message.reply("❌ Kullanım: .tkm taş / kağıt / makas");
+        }
+
         const bot = options[Math.floor(Math.random() * options.length)];
+
+        let u = getUser(message.author.id);
 
         if (choice === bot) {
             return message.reply(`🤝 Berabere! Ben ${bot} seçtim.`);
@@ -171,8 +173,6 @@ client.on("messageCreate", (message) => {
             (choice === "taş" && bot === "makas") ||
             (choice === "kağıt" && bot === "taş") ||
             (choice === "makas" && bot === "kağıt");
-
-        let u = getUser(message.author.id);
 
         if (win) {
             u.coins += 100;
